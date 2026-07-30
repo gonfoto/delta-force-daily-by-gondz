@@ -1,9 +1,13 @@
 {
-  "last_updated": "2026-07-30 04:05:36",
+  "last_updated": "2026-07-30 04:11:48",
   "passwords": [
     {
+      "map": "Zero Dam",
+      "code": "0129"
+    },
+    {
       "map": "Layali Grove",
-      "code": "0469"
+      "code": "9999"
     },
     {
       "map": "Brakkesh",
