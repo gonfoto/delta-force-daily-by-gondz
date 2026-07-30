@@ -25,5 +25,35 @@
       "map": "AZ3",
       "code": "0854"
     }
+  ],
+  "production_recommendations": [
+    {
+      "station": "Sư đoàn Tác chiến Điện tử",
+      "item": "Kính Ngắm Ảnh Nhiệt",
+      "income": "7,716",
+      "tier": "◆",
+      "color": "purple"
+    },
+    {
+      "station": "Bàn Chế Tác",
+      "item": "4,6x30mm AP SX",
+      "income": "42,377",
+      "tier": "🔶",
+      "color": "amber"
+    },
+    {
+      "station": "Trạm Y Tế",
+      "item": "Bộ Dụng Cụ Sửa Đồ",
+      "income": "4,669",
+      "tier": "🔶",
+      "color": "blue"
+    },
+    {
+      "station": "Bàn Chế Tạo Giáp",
+      "item": "Giáp Tinh Anh",
+      "income": "25,601",
+      "tier": "🔶",
+      "color": "red"
+    }
   ]
 }
