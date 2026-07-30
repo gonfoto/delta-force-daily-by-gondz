@@ -2,13 +2,14 @@ name: Auto Crawl Delta Force Daily Code
 
 on:
   schedule:
-    # Tự động chạy mỗi 8 tiếng (vào 00:00, 08:00, 16:00 UTC)
-    - cron: '0 0,8,16 * * *'
-  workflow_dispatch: # Nút bấm chạy thủ công bất cứ lúc nào
+    # Tự động chạy vào lúc 8h01 sáng giờ Việt Nam (tương đương 1:01 UTC) mỗi ngày
+    - cron: '1 1 * * *'
+  workflow_dispatch: # Nút bấm chạy thủ công
 
 jobs:
   crawl:
     runs-on: ubuntu-latest
+# ... (giữ nguyên phần còn lại của file) ...
     permissions:
       contents: write # Cấp quyền ghi file data.json
     steps:
