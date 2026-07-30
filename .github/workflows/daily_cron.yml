@@ -2,9 +2,9 @@ name: Auto Crawl Delta Force Daily Code
 
 on:
   schedule:
-    # Chạy tự động mỗi 8 tiếng (vào 00:00, 08:00, 16:00 UTC)
+    # Tự động chạy mỗi 8 tiếng (vào 00:00, 08:00, 16:00 UTC)
     - cron: '0 0,8,16 * * *'
-  workflow_dispatch: # Nút bấm chạy thủ công bất kỳ lúc nào
+  workflow_dispatch: # Nút bấm chạy thủ công bất cứ lúc nào
 
 jobs:
   crawl:
@@ -13,10 +13,10 @@ jobs:
       contents: write # Cấp quyền ghi file data.json
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # Đã nâng cấp lên v4 (sử dụng Node mới)
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5 # Đã nâng cấp lên v5 (sử dụng Node mới)
         with:
           python-version: '3.10'
 
