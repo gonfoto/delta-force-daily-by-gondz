@@ -2,60 +2,114 @@ import json
 import re
 import datetime
 import requests
+import time
 from bs4 import BeautifulSoup
 
-def get_map_passwords():
-    print("🔄 Đang quét mật khẩu Operations Daily...")
+def scrape_website(url):
+    """Hàm cào dữ liệu chung áp dụng cho mọi URL"""
     map_names = ["Zero Dam", "Layali Grove", "Brakkesh", "Space City", "Tide Prison", "AZ3"]
-    passwords = []
-    
+    codes = {}
     try:
-        url = "https://deltaforcetools.gg/"
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-        res = requests.get(url, headers=headers, timeout=10)
+        # Giả lập trình duyệt người dùng thật để tránh bị chặn
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+        res = requests.get(url, headers=headers, timeout=15)
         
         if res.status_code == 200:
             soup = BeautifulSoup(res.text, 'html.parser')
-            
-            # Xóa bớt khoảng trắng dư thừa để cấu trúc chuỗi gọn gàng hơn
+            # Làm sạch văn bản (xóa khoảng trắng dư thừa)
             full_text = re.sub(r'\s+', ' ', soup.get_text(separator=' '))
             
             for map_name in map_names:
-                # THUẬT TOÁN MỚI: 
-                # Bắt buộc 4 chữ số (\d{4}) phải nằm cực gần tên Map (trong vòng tối đa 80 ký tự đổ lại).
-                # Ngăn chặn hoàn toàn việc trượt xuống cuối trang lấy nhầm số 7810.
-                pattern = re.compile(rf'{re.escape(map_name)}.{{0,80}}?(\b\d{{4}}\b)', re.IGNORECASE)
+                # Quét tìm 4 chữ số nằm gần tên Map (tối đa 150 ký tự)
+                pattern = re.compile(rf'{re.escape(map_name)}.{{0,150}}?(\b\d{{4}}\b)', re.IGNORECASE)
                 match = pattern.search(full_text)
-                
                 if match:
-                    passwords.append({"map": map_name, "code": match.group(1)})
-                    
+                    codes[map_name] = match.group(1)
     except Exception as e:
-        print(f"❌ Lỗi khi cào dữ liệu: {e}")
+        print(f"❌ Lỗi kết nối khi cào {url}: {e}")
+        
+    return codes
 
-    # Nếu không tìm thấy đủ số lượng map trên web (có thể do cấu trúc web bị đổi),
-    # tự động dùng khung dữ liệu dự phòng chuẩn để không bị lỗi giao diện.
-    if len(passwords) == 0:
-        print("⚠️ Không tìm thấy mã trên web, đang sử dụng dữ liệu dự phòng...")
-        passwords = [
-            {"map": "Zero Dam", "code": "0129"},
-            {"map": "Layali Grove", "code": "0469"},
-            {"map": "Brakkesh", "code": "0789"},
-            {"map": "Space City", "code": "0183"},
-            {"map": "Tide Prison", "code": "0035"},
-            {"map": "AZ3", "code": "0854"}
-        ]
+def get_map_passwords():
+    print("🔄 BẮT ĐẦU TIẾN TRÌNH QUÉT KÉP VÀ ĐỐI CHIẾU MẬT KHẨU...")
+    
+    map_names = ["Zero Dam", "Layali Grove", "Brakkesh", "Space City", "Tide Prison", "AZ3"]
+    default_passwords = {
+        "Zero Dam": "0129", "Layali Grove": "0469", "Brakkesh": "0789", 
+        "Space City": "0183", "Tide Prison": "0035", "AZ3": "0854"
+    }
+    
+    max_retries = 3
+    final_passwords = []
+    
+    # Vòng lặp quét lại nếu dữ liệu không khớp
+    for attempt in range(max_retries):
+        print(f"\n--- ⏳ LẦN QUÉT THỨ {attempt + 1}/{max_retries} ---")
+        
+        # 1. Cào song song từ 2 nguồn web
+        codes_tools = scrape_website("https://deltaforcetools.gg/")
+        codes_hq = scrape_website("https://www.playdeltaforce.com/events/hq/vi/")
+        
+        print(f"Dữ liệu Tool (Bên thứ 3) : {codes_tools}")
+        print(f"Dữ liệu HQ (Chính thức)  : {codes_hq}")
+        
+        # 2. Thuật toán đối chiếu
+        is_match_all = True
+        temp_passwords = []
+        
+        for m in map_names:
+            c_tool = codes_tools.get(m)
+            c_hq = codes_hq.get(m)
+            
+            # Nếu cả 2 web đều có mã và mã hoàn toàn GIỐNG NHAU
+            if c_tool and c_hq and c_tool == c_hq:
+                temp_passwords.append({"map": m, "code": c_tool})
+            else:
+                is_match_all = False
+                print(f"⚠️ PHÁT HIỆN LỆCH tại {m} -> Tool: {c_tool} | HQ: {c_hq}")
+        
+        # Nếu tất cả 6 map đều khớp nhau 100%
+        if is_match_all and len(temp_passwords) == len(map_names):
+            print("✅ TẤT CẢ MẬT KHẨU KHỚP NHAU 100%! Tiến hành xuất file.")
+            final_passwords = temp_passwords
+            break  # Thoát khỏi vòng lặp quét lại
+        else:
+            if attempt < max_retries - 1:
+                print("🔄 Dữ liệu chưa đồng nhất hoặc cào thiếu. Chờ 15 giây để quét lại...")
+                time.sleep(15)
+            else:
+                print("❌ Đã hết 3 lần quét lại nhưng vẫn lệch. Kích hoạt cơ chế chốt dữ liệu an toàn...")
+                
+                # Cơ chế chốt ưu tiên: Lấy web chính thức -> Lấy Tool -> Lấy dự phòng
+                for m in map_names:
+                    c_hq = codes_hq.get(m)
+                    c_tool = codes_tools.get(m)
+                    
+                    if c_hq:
+                        final_passwords.append({"map": m, "code": c_hq})
+                        print(f"🔹 {m}: Quyết định dùng mã Web Chính Thức ({c_hq})")
+                    elif c_tool:
+                        final_passwords.append({"map": m, "code": c_tool})
+                        print(f"🔹 {m}: Quyết định dùng mã Tool ({c_tool})")
+                    else:
+                        final_passwords.append({"map": m, "code": default_passwords[m]})
+                        print(f"🔹 {m}: Quyết định dùng mã Dự Phòng ({default_passwords[m]})")
 
-    # Đóng gói dữ liệu ra file JSON
+    # 3. Sắp xếp lại thứ tự map cho đúng chuẩn game
+    final_passwords = sorted(final_passwords, key=lambda x: map_names.index(x["map"]))
+
+    # 4. Ghi toàn bộ dữ liệu ra file data.json
     data = {
         "last_updated": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "passwords": passwords
+        "passwords": final_passwords
     }
 
     with open("data.json", "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
         
-    print(f"✅ Đã cập nhật xong {len(passwords)} mật khẩu map!")
+    print(f"\n✅ Hoàn tất! Đã ghi thành công {len(final_passwords)} mã xác thực vào file data.json.")
 
 if __name__ == "__main__":
     get_map_passwords()
