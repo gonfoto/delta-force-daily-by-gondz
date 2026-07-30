@@ -9,8 +9,11 @@ def scrape_website(url):
     """Hàm cào dữ liệu chung áp dụng cho mọi URL"""
     map_names = ["Zero Dam", "Layali Grove", "Brakkesh", "Space City", "Tide Prison", "AZ3"]
     codes = {}
+    
+    # BỘ LỌC RÁC: Khai báo các số ảo, số placeholder bị cấm
+    invalid_codes = ["9999", "0000", "1234", "2024", "2025", "2026"]
+    
     try:
-        # Giả lập trình duyệt người dùng thật để tránh bị chặn
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
@@ -18,15 +21,16 @@ def scrape_website(url):
         
         if res.status_code == 200:
             soup = BeautifulSoup(res.text, 'html.parser')
-            # Làm sạch văn bản (xóa khoảng trắng dư thừa)
             full_text = re.sub(r'\s+', ' ', soup.get_text(separator=' '))
             
             for map_name in map_names:
-                # Quét tìm 4 chữ số nằm gần tên Map (tối đa 150 ký tự)
                 pattern = re.compile(rf'{re.escape(map_name)}.{{0,150}}?(\b\d{{4}}\b)', re.IGNORECASE)
                 match = pattern.search(full_text)
                 if match:
-                    codes[map_name] = match.group(1)
+                    code = match.group(1)
+                    # Nếu số quét được KHÔNG nằm trong bộ lọc rác thì mới chấp nhận
+                    if code not in invalid_codes:
+                        codes[map_name] = code
     except Exception as e:
         print(f"❌ Lỗi kết nối khi cào {url}: {e}")
         
@@ -44,18 +48,15 @@ def get_map_passwords():
     max_retries = 3
     final_passwords = []
     
-    # Vòng lặp quét lại nếu dữ liệu không khớp
     for attempt in range(max_retries):
         print(f"\n--- ⏳ LẦN QUÉT THỨ {attempt + 1}/{max_retries} ---")
         
-        # 1. Cào song song từ 2 nguồn web
         codes_tools = scrape_website("https://deltaforcetools.gg/")
         codes_hq = scrape_website("https://www.playdeltaforce.com/events/hq/vi/")
         
         print(f"Dữ liệu Tool (Bên thứ 3) : {codes_tools}")
         print(f"Dữ liệu HQ (Chính thức)  : {codes_hq}")
         
-        # 2. Thuật toán đối chiếu
         is_match_all = True
         temp_passwords = []
         
@@ -63,26 +64,22 @@ def get_map_passwords():
             c_tool = codes_tools.get(m)
             c_hq = codes_hq.get(m)
             
-            # Nếu cả 2 web đều có mã và mã hoàn toàn GIỐNG NHAU
             if c_tool and c_hq and c_tool == c_hq:
                 temp_passwords.append({"map": m, "code": c_tool})
             else:
                 is_match_all = False
                 print(f"⚠️ PHÁT HIỆN LỆCH tại {m} -> Tool: {c_tool} | HQ: {c_hq}")
         
-        # Nếu tất cả 6 map đều khớp nhau 100%
         if is_match_all and len(temp_passwords) == len(map_names):
             print("✅ TẤT CẢ MẬT KHẨU KHỚP NHAU 100%! Tiến hành xuất file.")
             final_passwords = temp_passwords
-            break  # Thoát khỏi vòng lặp quét lại
+            break 
         else:
             if attempt < max_retries - 1:
                 print("🔄 Dữ liệu chưa đồng nhất hoặc cào thiếu. Chờ 15 giây để quét lại...")
                 time.sleep(15)
             else:
                 print("❌ Đã hết 3 lần quét lại nhưng vẫn lệch. Kích hoạt cơ chế chốt dữ liệu an toàn...")
-                
-                # Cơ chế chốt ưu tiên: Lấy web chính thức -> Lấy Tool -> Lấy dự phòng
                 for m in map_names:
                     c_hq = codes_hq.get(m)
                     c_tool = codes_tools.get(m)
@@ -97,10 +94,8 @@ def get_map_passwords():
                         final_passwords.append({"map": m, "code": default_passwords[m]})
                         print(f"🔹 {m}: Quyết định dùng mã Dự Phòng ({default_passwords[m]})")
 
-    # 3. Sắp xếp lại thứ tự map cho đúng chuẩn game
     final_passwords = sorted(final_passwords, key=lambda x: map_names.index(x["map"]))
 
-    # 4. Ghi toàn bộ dữ liệu ra file data.json
     data = {
         "last_updated": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "passwords": final_passwords
