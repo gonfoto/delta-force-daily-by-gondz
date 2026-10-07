@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026/10/07 02:52",
+  "last_updated": "2026-10-07 06:42:34",
   "passwords": [
     {
       "map": "Zero Dam",
@@ -7,23 +7,23 @@
     },
     {
       "map": "Layali Grove",
-      "code": "0517"
+      "code": "4149"
     },
     {
       "map": "Brakkesh",
-      "code": "6473"
+      "code": "2200"
     },
     {
       "map": "Space City",
-      "code": "2754"
+      "code": "0150"
     },
     {
       "map": "Tide Prison",
-      "code": "8332"
+      "code": "1376"
     },
     {
       "map": "AZ3",
-      "code": "0900"
+      "code": "6215"
     }
   ]
 }
